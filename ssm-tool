@@ -1,0 +1,210 @@
+#!/usr/bin/env python3
+import argparse
+import boto3
+import datetime
+import os
+import shlex
+import sys
+import textwrap
+from boto3.session import Session
+from dateutil.tz import tzlocal
+from prettytable import PrettyTable
+
+def get_profiles():
+    try:
+        return Session().available_profiles
+    except Exception as e:
+        print(f'get_profiles failed with {e.__class__.__name__}: {e}')
+        sys.exit(1)
+
+def exec_sh(cmd, session, aws=False):
+    try:
+        if aws:
+            creds = [(c or '') for c in session.get_credentials().get_frozen_credentials()]
+            envs = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_SESSION_TOKEN']
+            for k, v in list(zip(envs, creds)):
+                os.environ[k] = str(v)
+        os.execvp(cmd[0], cmd)
+    except OSError as e:
+        print(f'could not execute {cmd[0]}: {os.strerror(e.errno)}',
+                file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f'exec_sh failed with {e.__class__.__name__}: {e}',
+                file=sys.stderr)
+        sys.exit(1)
+
+
+def build_ssh_conf(ssmi, session):
+    creds_from_env = True if 'env' in session.get_credentials().method else False
+    path = '/.ssh'
+    profile = 'env' if creds_from_env else session.profile_name
+    conf_file = f'{os.path.expanduser("~")}{path}/ssmtool-{profile}'
+    users = dict(centos='centos', amazon='ec2-user', ubuntu='ubuntu')
+    try:
+        os.umask(0)
+        with open(os.open(conf_file, os.O_CREAT | os.O_WRONLY |os.O_TRUNC, 0o600), 'w') as f:
+            if creds_from_env:
+                f.write(f'# config created without AWS profile set '
+                f'(must have appropriate env vars set when connecting)')
+            for i in ssmi:
+                name = i.get('Name').replace(' ', '_')
+                hostname = '.'.join(i.get('ComputerName').split('.')[:2])
+                platform = i.get('PlatformName') 
+                f.write(f"\nHost {name} {i.get('IPAddress')} {hostname}\n"
+                        f"  Hostname {i.get('InstanceId')}\n")
+                if any(u in platform.lower() for u in users):
+                    f.write(f'  User {str(*[users[u] for u in users if u in platform.lower()])}\n')
+        f.close()
+        print(f"\nssh config fragment generated and saved to -> {conf_file}")
+    except Exception as e:
+        print(f'build_ssh_conf failed with {e.__class__.__name__}: {e}',
+                file=sys.stderr)
+        sys.exit(1)
+
+
+def get_ec2_name(iid, session):
+    try:
+        tags = session.resource('ec2').Instance(iid).tags
+        name = [tag['Value'] for tag in tags if tag['Key'] == 'Name']
+        return name[0] if name else ''
+    except Exception as e:
+        print(f'get_ec2_name failed with {e.__class__.__name__}: {e}',
+                file=sys.stderr)
+        sys.exit(1)
+
+
+def ssm_update_agent(ssmi, session):
+    try:
+        iidlist = [i.get('InstanceId') for i in ssmi]
+        resp = session.client('ssm').send_command(
+            InstanceIds=iidlist,
+            DocumentName='AWS-UpdateSSMAgent',
+            DocumentVersion='$LATEST')
+        if resp['ResponseMetadata']['HTTPStatusCode'] == 200:
+            print('success')
+    except Exception as e:
+        print(f'ssm_update_agent failed with {e.__class__.__name__}: {e}',
+                file=sys.stderr)
+        sys.exit(1)
+
+
+def ssm_list_instances(platform, session):
+    try:
+        filters = {'Key': 'PlatformTypes', 'Values': platform} 
+        ssm = session.client('ssm')
+        ssminstances = session.client('ssm').describe_instance_information(MaxResults=50, Filters=[filters])
+        ssmi = ssminstances['InstanceInformationList']
+        while True:
+            next_token = ssminstances.get('NextToken')
+            if not next_token: break
+            ssminstances = ssm.describe_instance_information(MaxResults=50, Filters=[filters], NextToken=next_token)
+            ssmi.extend(ssminstances['InstanceInformationList'])
+        for i in ssmi: i.update({'Name': get_ec2_name(i['InstanceId'], session)})
+        return ssmi
+    except Exception as e:
+        print(f'ssm_list_instances failed with {e.__class__.__name__}: {e}',
+                file=sys.stderr)
+        sys.exit(1)
+
+def build_table(ssmi):
+    table = PrettyTable(['tag[name]', 'instance', 'ip address', 'ssm-agent*', 'platform'])
+    table.align = 'l'
+    for r in list(zip(
+            [i.get('Name')[:40] for i in ssmi],
+            [i.get('InstanceId')[:40] for i in ssmi],
+            [i.get('IPAddress')[:40] for i in ssmi],
+            [i.get('IsLatestVersion') for i in ssmi],
+            [i.get('PlatformName')[:40] for i in ssmi])):
+        table.add_row(r)
+    return table
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='ssm toolkit',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=textwrap.dedent("""
+            A wrapper toolkit that interacts with AWS SSM and SSH to simplify
+            instance visibility and access. Designed to work in conjunction with
+            ssh-over-ssm[0] for access to linux-based instances.
+
+            If run without a command the script will list all available instances.
+
+            AWS credentials will be read from appropriate environment variables if
+            provided. However, if using in confjunction with ssh-over-ssm it is
+            recommended to use the --profile argument or AWS_PROFILE environment
+            variable, which take precedence over the others. Examples below.
+
+            For usage examples and more information see the README[1].
+
+            [0] https://github.com/elpy1/ssh-over-ssm
+            [1] https://github.com/elpy1/ssm-tool
+            """
+        )
+    )
+
+    group = parser.add_mutually_exclusive_group()
+    parser.add_argument(
+        '--profile', dest='profile', action='store',
+        default=os.getenv('AWS_PROFILE') or None,
+        metavar='profile'.upper(), choices=get_profiles(),
+        help='AWS CLI profile to use (default: \'default\')')
+    parser.add_argument(
+        '-x', '--linux', dest='platforms',
+        action='append_const', const='Linux',
+        help='returns only linux-based instances (default: all)')
+    parser.add_argument(
+        '-w', '--windows', dest='platforms',
+        action='append_const', const='Windows',
+        help='returns only windows-based instances (default: all)')
+    group.add_argument(
+        '--text', dest='text', action='store_true',
+        help='returns data in plain text columns (default: false)')
+    group.add_argument(
+        '--iid', action='store_true',
+        help='returns only instance ids')
+    group.add_argument(
+        '--update', dest='update', action='store_true',
+        help='updates ssm-agent on instances')
+    group.add_argument(
+        '--session', action='store', metavar='instance'.upper(),
+        help='an instance to connect to using ssm start-session')
+    group.add_argument(
+        '--ssh', action='store', metavar='command'.upper(),
+        help='a ssh command to execute')
+    group.add_argument(
+        '--ssh-conf', dest='sshconf', action='store_true',
+        help='generates and saves a ssh config fragment')
+    parser.add_argument(
+        'search', metavar='string'.upper(), nargs='?',
+        help='an optional search term to filter results')
+
+    args = parser.parse_args()
+    session = Session(profile_name=args.profile)
+
+    if args.session:
+        exec_sh(shlex.split(f'aws ssm start-session --target {args.session}'), session, aws=True)
+
+    if args.ssh:
+        exec_sh(shlex.split(f'ssh {args.ssh}'), session, aws=True)
+
+    ssmi = ssm_list_instances((args.platforms or ['Linux', 'Windows']), session)
+    
+    if args.search:
+        search = args.search
+        ssmi = [i for i in ssmi if any([search.lower() in str(v).lower() for v in i.values()])]
+
+    if args.sshconf:
+        build_ssh_conf(ssmi, session)
+    elif args.update:
+        ssm_update_agent(ssmi, session)
+    elif args.iid:
+        print(*[i.get('InstanceId') for i in ssmi], sep='\n')
+    else:
+        table = build_table(ssmi)
+        if args.text:
+            print(table.get_string(border=False, header=False))
+        else:
+            print(f'{table}\n * ssm-agent column refers to whether the agent is up-to-date')
+
+main()

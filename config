@@ -1,0 +1,39 @@
+# applies to all hosts and ensures our sessions stays alive
+Host *
+  TCPKeepAlive yes
+  ServerAliveInterval 30
+  ConnectTimeout 10
+
+############################
+# other ssh config below
+############################
+
+# example configs
+Host bastion.client1
+  Hostname bastion.client1.host.com.au
+  User root
+
+Host web1.client1
+  Hostname web1.client1.host.com.au
+  User root
+  ProxyJump bastion1.client1
+
+############################
+# ssm-tool/ssh-over-ssm config below
+############################
+
+# applies if our executed command returns an exit code of 0.
+# we use grep to check if the host is present in config generated
+# by ssm-tool. if true, parse all the config; else continue.
+Match exec "grep -qs '^Host.*%n' %d/.ssh/ssmtool-*"
+  Include ssmtool-*
+
+# applies to all hosts matching the target hostname. most directives
+# are self-explanatory. the identitfyfile directive is not strict and
+# is included for cases where ssh-ssm.sh generates SSH keys.
+Host i-*
+  ProxyCommand ssh-ssm.sh %h %r
+  IdentityFile ~/.ssh/ssm-ssh-tmp
+  StrictHostKeyChecking no
+  PasswordAuthentication no
+  ChallengeResponseAuthentication no
