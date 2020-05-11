@@ -22,7 +22,7 @@ It's been a while since I uploaded and started using ssh-over-ssm and it has rea
 1) Clone this repository and `ssh-over-ssm`
 2) Place scripts in a familiar local directory (e.g. `~/bin/`)
 3) Make executable and add to PATH -> `chmod +x ~/bin{ssm-tool,ssh-ssm.sh}` and `echo "export PATH="$HOME/bin${PATH:+:${PATH}}""| tee -a ~/.bashrc` (or `~/.bash_profile`)
-4) Install required python modules  -> `pip3 install --user -r {ssm-tool repo}/requirements.txt`
+4) Install required python modules  -> `pip3 install --user -r /path/to/ssm-tool-repo/requirements.txt`
 5) Add snippet to SSH config (see below)
 6) macOS users may need to update `bash` and `openssh` with `brew install`
 
@@ -69,7 +69,7 @@ The following is true for the below examples:
 - I do not have a SSH key on my machine locally (and obviously there's no public key on the remote server).
 
 
-#### Listing instances and searching/filtering results by platform OS, IP and tag:name:
+#### Listing instances and filtering results
 Default list (no arguments/flags):
 ```
 [elpy@testbox ~]$ ssm-tool --profile home-dev
@@ -116,7 +116,7 @@ Other list options:
 - To filter results by linux/windows use `-x --linux` or `-w --windows` flags.
 - To return only instance IDs use the `--iid` flag.
 
-#### Connecting to an instance using a SSM session:
+#### Connecting to an instance using a SSM session
 ```
 [elpy@testbox ~]$ ssm-tool --profile home-dev --session i-0xxxxxxxxxxxx29b9
 
@@ -143,7 +143,7 @@ Connection to i-0xxxxxxxxxxxx29b9 closed.
 **NOTE:** input to this argument is treated as if it were the arguments to `ssh` on the CLI
 
 
-#### Using ssm-tool to generate SSH config and then using ssh directly to connect:
+#### Using ssm-tool to generate SSH config and then using ssh directly to connect
 
 Generate config:
 ```
