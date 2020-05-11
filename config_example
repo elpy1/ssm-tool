@@ -1,4 +1,4 @@
-# applies to all hosts and ensures our sessions stays alive
+# applies to all hosts and ensures our sessions stay alive
 Host *
   TCPKeepAlive yes
   ServerAliveInterval 30
@@ -29,9 +29,9 @@ Match exec "grep -qs '^Host.*%n' %d/.ssh/ssmtool-*"
   Include ssmtool-*
 
 # applies to all hosts matching the target hostname. most directives
-# are self-explanatory. the identitfyfile directive is not strict and
+# are self-explanatory. the identityfile directive is not strict and
 # is included for cases where ssh-ssm.sh generates SSH keys.
-Host i-*
+Match host i-*
   ProxyCommand ssh-ssm.sh %h %r
   IdentityFile ~/.ssh/ssm-ssh-tmp
   StrictHostKeyChecking no
