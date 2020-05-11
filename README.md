@@ -69,7 +69,7 @@ The following is true for the below examples:
 - I do not have a SSH key on my machine locally (and obviously there's no public key on the remote server).
 
 
-#### Listing instances and filtering results
+### Listing instances and filtering results
 Default list (no arguments/flags):
 ```
 [elpy@testbox ~]$ ssm-tool --profile home-dev
@@ -116,7 +116,7 @@ Other list options:
 - To filter results by linux/windows use `-x --linux` or `-w --windows` flags.
 - To return only instance IDs use the `--iid` flag.
 
-#### Connecting to an instance using a SSM session
+### Connecting to an instance using a SSM session
 ```
 [elpy@testbox ~]$ ssm-tool --profile home-dev --session i-0xxxxxxxxxxxx29b9
 
@@ -129,7 +129,7 @@ Exiting session with sessionId: example123-0e467c6bf9f9ae39d.
 ```
 **NOTE:** You will connect as the `ssm-user`
 
-#### Connecting to an instance over SSH using `ssm-tool` and instance id:
+### Connecting to an instance over SSH using `ssm-tool` and instance id:
 SSH from `ssm-tool` without any pre-configuration:
 ```
 [elpy@testbox ~]$ ssm-tool --profile home-dev --ssh centos@i-0xxxxxxxxxxxx29b9
@@ -143,7 +143,7 @@ Connection to i-0xxxxxxxxxxxx29b9 closed.
 **NOTE:** input to this argument is treated as if it were the arguments to `ssh` on the CLI
 
 
-#### Using ssm-tool to generate SSH config and then using ssh directly to connect
+### Using ssm-tool to generate SSH config and then using ssh directly to connect
 
 Generate config:
 ```
