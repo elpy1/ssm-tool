@@ -4,7 +4,7 @@ SSM toolkit. Designed to complement [ssh-over-ssm](https://github.com/elpy1/ssh-
 
 
 ## Info and requirements
-It's been a while since I uploaded and started using ssh-over-ssm and it has really had an impact in making life easier for sysadmins/engineers needing access to AWS EC2 instances.  Over time, I've been making small changes to `ssm-tool` (which began as a script to simply list SSM instances) to simplify both SSH access and configuration.
+It's been a while since I uploaded and started using ssh-over-ssm and it has really had an impact in making life easier for sysadmins/engineers needing access to AWS EC2 instances. I've been making small changes to `ssm-tool` (which began as a script to simply list SSM instances) here and there to simplify both SSH access and configuration for myself and colleagues.
 
 
 ### Requirements
@@ -15,7 +15,7 @@ It's been a while since I uploaded and started using ssh-over-ssm and it has rea
 - a config snippet added to the end of your SSH config (`~/.ssh/config`)
 - `ssh-ssm.sh` and `ssm-tool` in your `$PATH`
 - ssm-agent installed and updated on remote instances
-- necessary AWS IAM permissions for your user and the remote instance (SSM/EC2)
+- necessary AWS IAM permissions for your user and the remote host (instance profile)
 
 
 ### Installation and usage
