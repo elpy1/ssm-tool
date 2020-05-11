@@ -22,7 +22,7 @@ It's been a while since I uploaded and started using ssh-over-ssm and it has rea
 ### Installation and usage
 1) Clone this repository and `ssh-over-ssm`
 2) Place scripts in a familiar local directory (e.g. `~/bin/`)
-3) Make executable and add to PATH -> `chmod +x ~/bin{ssm-tool,ssh-ssm.sh}` and `echo "export PATH="$HOME/bin${PATH:+:${PATH}}""| tee -a ~/.bashrc` (or `~/.bash_profile`)
+3) Make executable and add to PATH -> `chmod +x ~/bin/{ssm-tool,ssh-ssm.sh}` and `echo "export PATH="$HOME/bin${PATH:+:${PATH}}""| tee -a ~/.bashrc` (or `~/.bash_profile`)
 4) Install required python modules  -> `pip3 install --user -r /path/to/ssm-tool-repo/requirements.txt`
 5) Add snippet to SSH config (see below)
 6) macOS users may need to update `bash` and `openssh` with `brew install`
@@ -152,7 +152,7 @@ Generate config:
 
 ssh config fragment generated and saved to -> /home/elpy/.ssh/ssmtool-home-dev
 ```
-Connect over SSH to the jumpbox host using name[tag]:
+Connect over SSH to the jumpbox host using `name[tag]`:
 ```
 [elpy@testbox ~]$ ssh home-dev-jumpbox-01
 Last login: Sun May 10 07:15:35 2020 from localhost
@@ -167,14 +167,14 @@ Run "sudo yum update" to apply all updates.
 [ec2-user@ip-10-xxx-24-9 ~]$ logout
 Connection to i-0xxxxxxxxxxxx79d6 closed.
 ```
-Connect over SSH to the confluence host using IP address:
+Connect over SSH to the confluence host using `IP address`:
 ```
 [elpy@testbox ~]$ ssh 10.xxx.24.1xx
 Last login: Sun May 10 07:18:48 2020 from localhost
 [centos@ip-10-xxx-24-1xx ~]$ logout
 Connection to i-0xxxxxxxxxxxx9007 closed.
 ```
-Connect over SSH to the bamboo host using short hostname:
+Connect over SSH to the bamboo host using short `hostname`:
 ```
 [elpy@testbox ~]$ ssh ip-10-xxx-24-2xx.ap-southeast-2
 Last login: Sun May 10 12:44:19 2020 from localhost
