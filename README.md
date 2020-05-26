@@ -183,4 +183,45 @@ Connection to i-0xxxxxxxxxxxx29b9 closed.
 ```
 **Note:** Feel free to add other names or change the username in the generated SSH config fragment
 
+### If you don't use AWS profiles
+For example, if you use some form of tooling to export required env vars for you. `ssm-tool` will still work, however you will need to ensure you export the required environment variables each time you run `ssh`. Example below.   
+    
+Find jira instance and generate config (config fragment is no longer attached to profile):
+```
+[elpy@testbox ~]$ awsenv home-dev -- ssm-tool jira
++-------------------+---------------------+---------------+------------+--------------+
+| tag[name]         | instance            | ip address    | ssm-agent* | platform     |
++-------------------+---------------------+---------------+------------+--------------+
+| home-dev-jiraasg  | i-0xxxxxxxxxxxxc331 | 10.xxx.24.2xx | True       | Amazon Linux |
++-------------------+---------------------+---------------+------------+--------------+
+  
+  
+[elpy@testbox ~]$ awsenv home-dev -- ssm-tool --ssh-conf
+
+ssh config fragment generated and saved to -> /home/elpy/.ssh/ssmtool-env
+  
+  
+[elpy@testbox ~]$ cat ~/.ssh/ssmtool-env 
+# config created without AWS profile set (must have appropriate env vars set when connecting)
+Host home-dev-jiraasg 10.xxx.24.2xx ip-10-xxx-24-2xx.ap-southeast-2
+  Hostname i-0xxxxxxxxxxxxc331
+  User ec2-user
+
+```
+  
+Connect over SSH to the instance:
+```
+[elpy@testbox ~]$ awsenv home-dev -- ssh home-dev-jiraasg
+Last login: Sun May 21 04:11:54 2020 from localhost
+
+       __|  __|_  )
+       _|  (     /   Amazon Linux 2 AMI
+      ___|\___|___|
+
+https://aws.amazon.com/amazon-linux-2/
+6 package(s) needed for security, out of 20 available
+Run "sudo yum update" to apply all updates.
+[ec2-user@ip-10-xxx-24-2xx ~]$ logout
+Connection to i-0xxxxxxxxxxxxc331 closed.
+```
 
