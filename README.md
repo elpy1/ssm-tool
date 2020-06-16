@@ -1,11 +1,13 @@
 
 # ssm-tool
-SSM toolkit. Designed to complement [ssh-over-ssm](https://github.com/elpy1/ssh-over-ssm).
+SSM toolkit. Designed to compliment ssh-over-ssm.
 
-
-## Info and requirements
-It's been a while since I uploaded and started using ssh-over-ssm and it has really had an impact in making life easier for sysadmins/engineers needing access to AWS EC2 instances. I've been making small changes to `ssm-tool` (which began as a script to simply list SSM instances) here and there to simplify both SSH access and configuration for myself and colleagues.   
-    
+## Info, requirements and installation
+It's been a while since I uploaded and started using [ssh-over-ssm](https://github.com/elpy1/ssh-over-ssm) and it's really simplified AWS EC2 access for myself and colleagues. Over time I've updated `ssm-tool` (which began as a script to simply list/update SSM instances) to further simplify setup and configuration of SSH access over SSM, requiring only AWS credentials.   
+   
+### Demo
+![ssm-tool installation and usage](demo/ssh-over-ssm.gif)
+  
 [Quick setup guide](https://gist.github.com/elpy1/9839ce2a06850fb25b35144bb2f70564) for the impatient.
 
 ### Requirements
@@ -224,4 +226,3 @@ Run "sudo yum update" to apply all updates.
 [ec2-user@ip-10-xxx-24-2xx ~]$ logout
 Connection to i-0xxxxxxxxxxxxc331 closed.
 ```
-
